@@ -1,0 +1,46 @@
+{
+  "users": [
+    {
+      "id": "a517",
+      "role": "Manager",
+      "username": "reddylaxman",
+      "password": "asdfghjkl"
+    },
+    {
+      "id": "7533",
+      "role": "Admin",
+      "username": "Subhapreet",
+      "password": "1234"
+    },
+    {
+      "id": "76fa",
+      "role": "Manager",
+      "username": "Vardhan",
+      "password": "1234"
+    },
+    {
+      "id": "269d",
+      "role": "User",
+      "username": "Subham",
+      "password": "1234"
+    },
+    {
+      "id": "8d3d",
+      "role": "User",
+      "username": "Santhoshi",
+      "password": "1234"
+    },
+    {
+      "id": "31ea",
+      "role": "Manager",
+      "username": "Jnan",
+      "password": "1234"
+    },
+    {
+      "id": "a158",
+      "role": "Manager",
+      "username": "Manas",
+      "password": "1234"
+    }
+  ]
+}

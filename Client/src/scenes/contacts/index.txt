@@ -1,0 +1,387 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import { tokens } from "../../theme";
+import { mockDataContacts } from "../../data/mockData";
+import Header from "../../components/Header";
+import { useTheme } from "@mui/material";
+import { Formik, Form, Field } from "formik";
+import * as yup from "yup";
+
+const validationSchema = yup.object({
+  name: yup.string().required("Name is required"),
+  age: yup.number().required("Age is required").positive().integer(),
+  phone: yup.string().required("Phone number is required"),
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Invalid email format"),
+  address: yup.string().required("Address is required"),
+  city: yup.string().required("City is required"),
+  zipCode: yup.string().required("Zip Code is required"),
+});
+
+const ContactForm = ({ open, onClose, initialValues, onSubmit }) => (
+  <Dialog
+    open={open}
+    onClose={onClose}
+    PaperProps={{
+      sx: {
+        backgroundColor: "black",
+        color: "#CECECE",
+      },
+    }}
+  >
+    <DialogTitle>
+      {initialValues.id ? "Edit Contact" : "Add Contact"}
+    </DialogTitle>
+    <Formik
+      initialValues={initialValues}
+      validationSchema={validationSchema}
+      onSubmit={(values) => {
+        onSubmit(values);
+        onClose();
+      }}
+    >
+      {({ errors, touched }) => (
+        <Form>
+          <DialogContent>
+            <Field
+              name="registrarId"
+              as={TextField}
+              label="RegistrarId"
+              fullWidth
+              margin="dense"
+              error={touched.registrarId && !!errors.registrarId}
+              helperText={touched.registrarId && errors.registrarid}
+            />
+            <Field
+              name="name"
+              as={TextField}
+              label="Name"
+              fullWidth
+              margin="dense"
+              error={touched.name && !!errors.name}
+              helperText={touched.name && errors.name}
+            />
+            <Field
+              name="age"
+              as={TextField}
+              label="Age"
+              type="number"
+              fullWidth
+              margin="dense"
+              error={touched.age && !!errors.age}
+              helperText={touched.age && errors.age}
+            />
+            <Field
+              name="phone"
+              as={TextField}
+              label="Phone"
+              fullWidth
+              margin="dense"
+              error={touched.phone && !!errors.phone}
+              helperText={touched.phone && errors.phone}
+            />
+            <Field
+              name="email"
+              as={TextField}
+              label="Email"
+              fullWidth
+              margin="dense"
+              error={touched.email && !!errors.email}
+              helperText={touched.email && errors.email}
+            />
+            <Field
+              name="address"
+              as={TextField}
+              label="Address"
+              fullWidth
+              margin="dense"
+              error={touched.address && !!errors.address}
+              helperText={touched.address && errors.address}
+            />
+            <Field
+              name="city"
+              as={TextField}
+              label="City"
+              fullWidth
+              margin="dense"
+              error={touched.city && !!errors.city}
+              helperText={touched.city && errors.city}
+            />
+            <Field
+              name="zipCode"
+              as={TextField}
+              label="Zip Code"
+              fullWidth
+              margin="dense"
+              error={touched.zipCode && !!errors.zipCode}
+              helperText={touched.zipCode && errors.zipCode}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              sx={{
+                backgroundColor: "#4461ED",
+                color: "#BBB2B2",
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "7px 7px",
+                margin: "3px",
+              }}
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              sx={{
+                backgroundColor: "#4461ED",
+                color: "#BBB2B2",
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "7px 7px",
+                margin: "3px",
+              }}
+              type="submit"
+            >
+              {initialValues.id ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </Form>
+      )}
+    </Formik>
+  </Dialog>
+);
+
+const Contacts = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const [contacts, setContacts] = useState(mockDataContacts);
+  const [open, setOpen] = useState(false);
+  const [currentContact, setCurrentContact] = useState(null);
+
+  const handleAdd = () => {
+    setCurrentContact({
+      id: null,
+      name: "",
+      registrarId: "",
+      age: "",
+      phone: "",
+      email: "",
+      address: "",
+      city: "",
+      zipCode: "",
+    });
+    setOpen(true);
+  };
+
+  const handleEdit = (contact) => {
+    setCurrentContact(contact);
+    setOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    setContacts(contacts.filter((contact) => contact.id !== id));
+  };
+
+  const handleFormSubmit = (contact) => {
+    if (contact.id) {
+      setContacts(contacts.map((c) => (c.id === contact.id ? contact : c)));
+    } else {
+      contact.id = contacts.length
+        ? Math.max(...contacts.map((c) => c.id)) + 1
+        : 1;
+      setContacts([...contacts, contact]);
+    }
+  };
+
+  console.log(contacts);
+
+  const columns = [
+    { field: "id", headerName: "ID", flex: 0.15, minWidth: 50 },
+    {
+      field: "registrarId",
+      headerName: "Registrar ID",
+      flex: 0.25,
+      minWidth: 75,
+    },
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 0.4,
+      minWidth: 100,
+      cellClassName: "name-column--cell",
+    },
+    {
+      field: "age",
+      headerName: "Age",
+      type: "number",
+      headerAlign: "left",
+      align: "left",
+      flex: 0.2,
+      minWidth: 50,
+    },
+    {
+      field: "phone",
+      headerName: "Phone Number",
+      flex: 0.3,
+      minWidth: 125,
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 0.5,
+      minWidth: 200,
+    },
+    {
+      field: "address",
+      headerName: "Address",
+      flex: 0.6,
+      minWidth: 180,
+    },
+    {
+      field: "city",
+      headerName: "City",
+      flex: 0.3,
+      minWidth: 50,
+    },
+    {
+      field: "zipCode",
+      headerName: "Zip Code",
+      flex: 0.2,
+      minWidth: 50,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 0.4,
+      minWidth: 100,
+      renderCell: (params) => (
+        <>
+          <Button
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+            onClick={() => handleEdit(params.row)}
+          >
+            Edit
+          </Button>
+          <Button
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+            onClick={() => handleDelete(params.row.id)}
+          >
+            Delete
+          </Button>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <Box m="10px">
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        // mb={0}
+      >
+        <Header
+          title="CONTACTS"
+          subtitle="List of Contacts for Future Reference"
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAdd}
+          sx={{
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            fontSize: "14px",
+            fontWeight: "bold",
+            padding: "10px 20px",
+          }}
+        >
+          Add Contact
+        </Button>
+      </Box>
+      <Box
+        m="40px 0 0 0"
+        height="75vh"
+        sx={{
+          "& .MuiDataGrid-root": {
+            border: "none",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "none",
+          },
+          "& .name-column--cell": {
+            color: colors.greenAccent[300],
+          },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.grey[100]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={contacts}
+          columns={columns}
+          components={{ Toolbar: GridToolbar }}
+        />
+      </Box>
+      <ContactForm
+        open={open}
+        onClose={() => setOpen(false)}
+        initialValues={
+          currentContact || {
+            id: null,
+            name: "",
+            age: "",
+            phone: "",
+            email: "",
+            address: "",
+            city: "",
+            zipCode: "",
+          }
+        }
+        onSubmit={handleFormSubmit}
+      />
+    </Box>
+  );
+};
+
+export default Contacts;

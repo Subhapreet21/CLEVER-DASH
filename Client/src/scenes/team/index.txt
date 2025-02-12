@@ -1,0 +1,782 @@
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  useTheme,
+  TextField,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import { tokens } from "../../theme";
+import { mockDataTeam } from "../../data/mockData";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+import Header from "../../components/Header";
+import { Formik, Form, Field } from "formik";
+import * as yup from "yup";
+
+const validationSchema = yup.object({
+  name: yup.string().required("Name is required"),
+  age: yup.number().required("Age is required").positive().integer(),
+  phone: yup.string().required("Phone number is required"),
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Invalid email format"),
+  accessLevel: yup.string().required("Access level is required"),
+});
+
+const accessLevels = [
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "user", label: "User" },
+];
+
+const TeamForm = ({ initialValues, validationSchema, onSubmit, onClose }) => (
+  <Formik
+    initialValues={initialValues}
+    validationSchema={validationSchema}
+    onSubmit={onSubmit}
+  >
+    {({ errors, touched }) => (
+      <Form>
+        <Box width={300}>
+          <Field
+            name="name"
+            as={TextField}
+            label="Name"
+            fullWidth
+            margin="dense"
+            error={touched.name && !!errors.name}
+            helperText={touched.name && errors.name}
+          />
+          <Field
+            name="age"
+            as={TextField}
+            label="Age"
+            type="number"
+            fullWidth
+            margin="dense"
+            error={touched.age && !!errors.age}
+            helperText={touched.age && errors.age}
+          />
+          <Field
+            name="phone"
+            as={TextField}
+            label="Phone"
+            fullWidth
+            margin="dense"
+            error={touched.phone && !!errors.phone}
+            helperText={touched.phone && errors.phone}
+          />
+          <Field
+            name="email"
+            as={TextField}
+            label="Email"
+            fullWidth
+            margin="dense"
+            error={touched.email && !!errors.email}
+            helperText={touched.email && errors.email}
+          />
+          <Field
+            name="accessLevel"
+            as={TextField}
+            select
+            label="Access Level"
+            fullWidth
+            margin="dense"
+            error={touched.accessLevel && !!errors.accessLevel}
+            helperText={touched.accessLevel && errors.accessLevel}
+          >
+            {accessLevels.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Field>
+        </Box>
+        <DialogActions>
+          <Button
+            onClick={onClose}
+            sx={{
+              backgroundColor: "#4461ED",
+              color: "#BBB2B2",
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            sx={{
+              backgroundColor: "#4461ED",
+              color: "#BBB2B2",
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+          >
+            {initialValues.id ? "Update" : "Add"}
+          </Button>
+        </DialogActions>
+      </Form>
+    )}
+  </Formik>
+);
+
+const Team = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const [team, setTeam] = useState(mockDataTeam);
+  const [open, setOpen] = useState(false);
+  const [currentMember, setCurrentMember] = useState(null);
+
+  const handleAdd = useCallback(() => {
+    setCurrentMember({
+      id: null,
+      name: "",
+      age: "",
+      phone: "",
+      email: "",
+      accessLevel: "",
+    });
+    setOpen(true);
+  }, []);
+
+  const handleEdit = useCallback((member) => {
+    setCurrentMember(member);
+    setOpen(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setCurrentMember(null);
+  }, []);
+
+  const handleDelete = useCallback((id) => {
+    setTeam((prevTeam) => prevTeam.filter((member) => member.id !== id));
+  }, []);
+
+  const handleFormSubmit = useCallback(
+    (values) => {
+      if (values.id) {
+        setTeam((prevTeam) =>
+          prevTeam.map((member) =>
+            member.id === values.id ? { ...member, ...values } : member
+          )
+        );
+      } else {
+        const newMember = { ...values, id: team.length + 1 };
+        setTeam((prevTeam) => [...prevTeam, newMember]);
+      }
+      setOpen(false);
+    },
+    [team]
+  );
+
+  const columns = useMemo(
+    () => [
+      { field: "id", headerName: "ID", flex: 0.15, minWidth: 50 },
+      { field: "name", headerName: "Name", flex: 0.4, minWidth: 100 },
+      {
+        field: "age",
+        headerName: "Age",
+        headerAlign: "left",
+        type: "number",
+        flex: 0.2,
+        minWidth: 50,
+        align: "left",
+      },
+      { field: "phone", headerName: "Phone Number", flex: 0.3, minWidth: 125 },
+      { field: "email", headerName: "Email", flex: 0.5, minWidth: 200 },
+      {
+        field: "accessLevel",
+        headerName: "Access Level",
+        flex: 0.4,
+        minWidth: 100,
+        renderCell: ({ row: { accessLevel } }) => {
+          console.log("Access Level:", accessLevel);
+          return (
+            <Box
+              width="60%"
+              p="5px"
+              display="flex"
+              justifyContent="center"
+              marginRight="auto"
+              backgroundColor={
+                accessLevel === "admin"
+                  ? colors.greenAccent[600]
+                  : colors.greenAccent[700]
+              }
+              borderRadius="4px"
+            >
+              {accessLevel === "admin" && <AdminPanelSettingsOutlinedIcon />}
+              {accessLevel === "manager" && <SecurityOutlinedIcon />}
+              {accessLevel === "user" && <LockOpenOutlinedIcon />}
+              <Typography color={colors.grey[100]} sx={{ ml: "5px" }}>
+                {accessLevel}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        flex: 0.3,
+        minWidth: 100,
+        renderCell: (params) => (
+          <>
+            <Button
+              variant="contained"
+              onClick={() => handleEdit(params.row)}
+              sx={{
+                backgroundColor: colors.blueAccent[700],
+                color: colors.grey[100],
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "7px 7px",
+                margin: "3px",
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => handleDelete(params.row.id)}
+              sx={{
+                backgroundColor: colors.blueAccent[700],
+                color: colors.grey[100],
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "7px 7px",
+                margin: "3px",
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        ),
+      },
+    ],
+    [colors, handleEdit, handleDelete]
+  );
+
+  return (
+    <Box m="10px">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Header title="TEAM" subtitle="Managing the Team Members" />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAdd}
+          sx={{
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            fontSize: "14px",
+            fontWeight: "bold",
+            padding: "10px 20px",
+          }}
+        >
+          Add Member
+        </Button>
+      </Box>
+      <Box
+        m="40px 0 0 0"
+        height="75vh"
+        sx={{
+          "& .MuiDataGrid-root": {
+            border: "none",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.grey[100]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={team}
+          columns={columns}
+          components={{ Toolbar: GridToolbar }}
+        />
+      </Box>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: "black",
+            color: "#CECECE",
+          },
+        }}
+      >
+        <DialogTitle>
+          {currentMember ? "Edit Member" : "Add Member"}
+        </DialogTitle>
+        <DialogContent>
+          <TeamForm
+            initialValues={
+              currentMember || {
+                id: null,
+                name: "",
+                age: "",
+                phone: "",
+                email: "",
+                accessLevel: "",
+              }
+            }
+            validationSchema={validationSchema}
+            onSubmit={handleFormSubmit}
+            onClose={handleClose}
+          />
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default Team;
+
+// import React, { useState, useCallback, useMemo } from "react";
+// import {
+//   Box,
+//   Typography,
+//   Button,
+//   useTheme,
+//   TextField,
+//   MenuItem,
+//   Dialog,
+//   DialogTitle,
+//   DialogContent,
+//   DialogActions,
+// } from "@mui/material";
+// import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+// import { tokens } from "../../theme";
+// import { mockDataTeam } from "../../data/mockData";
+// import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+// import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
+// import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+// import Header from "../../components/Header";
+// import { Formik, Form, Field } from "formik";
+// import * as yup from "yup";
+
+// const validationSchema = yup.object({
+//   name: yup.string().required("Name is required"),
+//   age: yup.number().required("Age is required").positive().integer(),
+//   phone: yup.string().required("Phone number is required"),
+//   email: yup
+//     .string()
+//     .required("Email is required")
+//     .email("Invalid email format"),
+//   accessLevel: yup.string().required("Access level is required"),
+// });
+
+// const accessLevels = [
+//   { value: "admin", label: "Admin" },
+//   { value: "manager", label: "Manager" },
+//   { value: "user", label: "User" },
+// ];
+
+// const TeamForm = ({ initialValues, validationSchema, onSubmit, onClose }) => (
+//   <Formik
+//     initialValues={initialValues}
+//     validationSchema={validationSchema}
+//     onSubmit={onSubmit}
+//   >
+//     {({ errors, touched }) => (
+//       <Form>
+//         <Box width={300}>
+//           <Field
+//             name="name"
+//             as={TextField}
+//             label="Name"
+//             fullWidth
+//             margin="dense"
+//             error={touched.name && !!errors.name}
+//             helperText={touched.name && errors.name}
+//           />
+//           <Field
+//             name="age"
+//             as={TextField}
+//             label="Age"
+//             type="number"
+//             fullWidth
+//             margin="dense"
+//             error={touched.age && !!errors.age}
+//             helperText={touched.age && errors.age}
+//           />
+//           <Field
+//             name="phone"
+//             as={TextField}
+//             label="Phone"
+//             fullWidth
+//             margin="dense"
+//             error={touched.phone && !!errors.phone}
+//             helperText={touched.phone && errors.phone}
+//           />
+//           <Field
+//             name="email"
+//             as={TextField}
+//             label="Email"
+//             fullWidth
+//             margin="dense"
+//             error={touched.email && !!errors.email}
+//             helperText={touched.email && errors.email}
+//           />
+//           <Field
+//             name="accessLevel"
+//             as={TextField}
+//             select
+//             label="Access Level"
+//             fullWidth
+//             margin="dense"
+//             error={touched.accessLevel && !!errors.accessLevel}
+//             helperText={touched.accessLevel && errors.accessLevel}
+//           >
+//             {accessLevels.map((option) => (
+//               <MenuItem key={option.value} value={option.value}>
+//                 {option.label}
+//               </MenuItem>
+//             ))}
+//           </Field>
+//         </Box>
+//         <DialogActions>
+//           <Button
+//             onClick={onClose}
+//             sx={{
+//               backgroundColor: "#4461ED",
+//               color: "#BBB2B2",
+//               fontSize: "10px",
+//               fontWeight: "bold",
+//               padding: "7px 7px",
+//               margin: "3px",
+//             }}
+//           >
+//             Cancel
+//           </Button>
+//           <Button
+//             type="submit"
+//             sx={{
+//               backgroundColor: "#4461ED",
+//               color: "#BBB2B2",
+//               fontSize: "10px",
+//               fontWeight: "bold",
+//               padding: "7px 7px",
+//               margin: "3px",
+//             }}
+//           >
+//             {initialValues.id ? "Update" : "Add"}
+//           </Button>
+//         </DialogActions>
+//       </Form>
+//     )}
+//   </Formik>
+// );
+
+// const Team = () => {
+//   const theme = useTheme();
+//   const colors = tokens(theme.palette.mode);
+//   const [team, setTeam] = useState(mockDataTeam);
+//   const [open, setOpen] = useState(false);
+//   const [currentMember, setCurrentMember] = useState(null);
+
+//   const handleAdd = useCallback(() => {
+//     setCurrentMember({
+//       id: null,
+//       name: "",
+//       age: "",
+//       phone: "",
+//       email: "",
+//       accessLevel: "",
+//     });
+//     setOpen(true);
+//   }, []);
+
+//   const handleEdit = useCallback((member) => {
+//     setCurrentMember(member);
+//     setOpen(true);
+//   }, []);
+
+//   const handleClose = useCallback(() => {
+//     setOpen(false);
+//     setCurrentMember(null);
+//   }, []);
+
+//   const handleDelete = useCallback((id) => {
+//     setTeam((prevTeam) => prevTeam.filter((member) => member.id !== id));
+//   }, []);
+
+//   const handleFormSubmit = useCallback(
+//     (values) => {
+//       if (values.id) {
+//         setTeam((prevTeam) =>
+//           prevTeam.map((member) =>
+//             member.id === values.id ? { ...member, ...values } : member
+//           )
+//         );
+//       } else {
+//         const newMember = { ...values, id: team.length + 1 };
+//         setTeam((prevTeam) => [...prevTeam, newMember]);
+//       }
+//       setOpen(false);
+//     },
+//     [team]
+//   );
+
+//   const columns = useMemo(
+//     () => [
+//       { field: "id", headerName: "ID", flex: 0.15, minWidth: 50 },
+//       { field: "name", headerName: "Name", flex: 0.4, minWidth: 100 },
+//       {
+//         field: "age",
+//         headerName: "Age",
+//         headerAlign: "left",
+//         type: "number",
+//         flex: 0.2,
+//         minWidth: 50,
+//         align: "left",
+//       },
+//       { field: "phone", headerName: "Phone Number", flex: 0.3, minWidth: 125 },
+//       { field: "email", headerName: "Email", flex: 0.5, minWidth: 200 },
+//       {
+//         field: "accessLevel",
+//         headerName: "Access Level",
+//         flex: 0.4,
+//         minWidth: 100,
+//         renderCell: ({ row: { accessLevel } }) => {
+//           console.log("Access Level:", accessLevel);
+//           return (
+//             <Box
+//               width="60%"
+//               p="5px"
+//               display="flex"
+//               justifyContent="center"
+//               marginRight="auto"
+//               backgroundColor={
+//                 accessLevel === "admin"
+//                   ? colors.greenAccent[600]
+//                   : colors.greenAccent[700]
+//               }
+//               borderRadius="4px"
+//             >
+//               {accessLevel === "admin" && <AdminPanelSettingsOutlinedIcon />}
+//               {accessLevel === "manager" && <SecurityOutlinedIcon />}
+//               {accessLevel === "user" && <LockOpenOutlinedIcon />}
+//               <Typography color={colors.grey[100]} sx={{ ml: "5px" }}>
+//                 {accessLevel}
+//               </Typography>
+//             </Box>
+//           );
+//         },
+//       },
+//       {
+//         field: "actions",
+//         headerName: "Actions",
+//         flex: 0.3,
+//         minWidth: 100,
+//         renderCell: (params) => (
+//           <>
+//             <Button
+//               variant="contained"
+//               onClick={() => handleEdit(params.row)}
+//               sx={{
+//                 backgroundColor: colors.blueAccent[700],
+//                 color: colors.grey[100],
+//                 fontSize: "10px",
+//                 fontWeight: "bold",
+//                 padding: "7px 7px",
+//                 margin: "3px",
+//               }}
+//             >
+//               Edit
+//             </Button>
+//             <Button
+//               variant="contained"
+//               onClick={() => handleDelete(params.row.id)}
+//               sx={{
+//                 backgroundColor: colors.blueAccent[700],
+//                 color: colors.grey[100],
+//                 fontSize: "10px",
+//                 fontWeight: "bold",
+//                 padding: "7px 7px",
+//                 margin: "3px",
+//               }}
+//             >
+//               Delete
+//             </Button>
+//           </>
+//         ),
+//       },
+//     ],
+//     [colors, handleEdit, handleDelete]
+//   );
+
+//   // Add your API calls here
+//   const api = {
+//     getTeam: async () => {
+//       const response = await fetch("/api/team");
+//       const data = await response.json();
+//       setTeam(data);
+//     },
+//     addTeamMember: async (member) => {
+//       const response = await fetch("/api/team", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(member),
+//       });
+//       const data = await response.json();
+//       setTeam((prevTeam) => [...prevTeam, data]);
+//     },
+//     updateTeamMember: async (member) => {
+//       const response = await fetch(`/api/team/${member.id}`, {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(member),
+//       });
+//       const data = await response.json();
+//       setTeam((prevTeam) =>
+//         prevTeam.map((teamMember) =>
+//           teamMember.id === data.id ? data : teamMember
+//         )
+//       );
+//     },
+//     deleteTeamMember: async (id) => {
+//       await fetch(`/api/team/${id}`, { method: "DELETE" });
+//       setTeam((prevTeam) =>
+//         prevTeam.filter((teamMember) => teamMember.id !== id)
+//       );
+//     },
+//   };
+
+//   useMemo(() => {
+//     api.getTeam(setTeam);
+//   }, []);
+
+//   return (
+//     <Box m="10px">
+//       <Box display="flex" justifyContent="space-between" alignItems="center">
+//         <Header title="TEAM" subtitle="Managing the Team Members" />
+//         <Button
+//           variant="contained"
+//           color="primary"
+//           onClick={handleAdd}
+//           sx={{
+//             backgroundColor: colors.blueAccent[700],
+//             color: colors.grey[100],
+//             fontSize: "14px",
+//             fontWeight: "bold",
+//             padding: "10px 20px",
+//           }}
+//         >
+//           Add Member
+//         </Button>
+//       </Box>
+//       <Box
+//         m="40px 0 0 0"
+//         height="75vh"
+//         sx={{
+//           "& .MuiDataGrid-root": {
+//             border: "none",
+//           },
+//           "& .MuiDataGrid-cell": {
+//             borderBottom: "none",
+//           },
+//           "& .MuiDataGrid-columnHeaders": {
+//             backgroundColor: colors.blueAccent[700],
+//             borderBottom: "none",
+//           },
+//           "& .MuiDataGrid-virtualScroller": {
+//             backgroundColor: colors.primary[400],
+//           },
+//           "& .MuiDataGrid-footerContainer": {
+//             borderTop: "none",
+//             backgroundColor: colors.blueAccent[700],
+//           },
+//           "& .MuiCheckbox-root": {
+//             color: `${colors.greenAccent[200]} !important`,
+//           },
+//           "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+//             color: `${colors.grey[100]} !important`,
+//           },
+//         }}
+//       >
+//         <DataGrid
+//           rows={team}
+//           columns={columns}
+//           components={{ Toolbar: GridToolbar }}
+//         />
+//       </Box>
+//       <Dialog
+//         open={open}
+//         onClose={handleClose}
+//         PaperProps={{
+//           sx: {
+//             backgroundColor: "black",
+//             color: "#CECECE",
+//           },
+//         }}
+//       >
+//         <DialogTitle>
+//           {currentMember ? "Edit Member" : "Add Member"}
+//         </DialogTitle>
+//         <DialogContent>
+//           <TeamForm
+//             initialValues={
+//               currentMember || {
+//                 id: null,
+//                 name: "",
+//                 age: "",
+//                 phone: "",
+//                 email: "",
+//                 accessLevel: "",
+//               }
+//             }
+//             validationSchema={validationSchema}
+//             onSubmit={(values) => {
+//               if (currentMember) {
+//                 // Update existing team member
+//                 api.updateTeamMember(values);
+//               } else {
+//                 // Add new team member
+//                 api.addTeamMember(values);
+//               }
+//             }}
+//             onClose={handleClose}
+//           />
+//         </DialogContent>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// export default Team;

@@ -1,0 +1,301 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+} from "@mui/material";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import { tokens } from "../../theme";
+import { mockDataInvoices } from "../../data/mockData";
+import Header from "../../components/Header";
+import { Formik, Form, Field } from "formik";
+import * as yup from "yup";
+
+const validationSchema = yup.object({
+  name: yup.string().required("Name is required"),
+  phone: yup.string().required("Phone number is required"),
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Invalid email format"),
+  cost: yup.number().required("Cost is required").positive(),
+  date: yup.date().required("Date is required"),
+});
+
+const Invoices = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const [invoices, setInvoices] = useState(mockDataInvoices);
+  const [open, setOpen] = useState(false);
+  const [currentInvoice, setCurrentInvoice] = useState(null);
+
+  const handleAdd = () => {
+    setCurrentInvoice({
+      id: null,
+      name: "",
+      phone: "",
+      email: "",
+      cost: "",
+      date: "",
+    });
+    setOpen(true);
+  };
+
+  const handleEdit = (invoice) => {
+    setCurrentInvoice(invoice);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setCurrentInvoice(null);
+  };
+
+  const handleDelete = (id) => {
+    setInvoices(invoices.filter((invoice) => invoice.id !== id));
+  };
+
+  const handleFormSubmit = (values) => {
+    if (values.id) {
+      setInvoices(invoices.map((inv) => (inv.id === values.id ? values : inv)));
+    } else {
+      values.id = invoices.length
+        ? Math.max(...invoices.map((inv) => inv.id)) + 1
+        : 1;
+      setInvoices([...invoices, values]);
+    }
+    setOpen(false);
+  };
+
+  const columns = [
+    { field: "id", headerName: "ID", flex: 0.15, minWidth: 50 },
+    { field: "name", headerName: "Name", flex: 0.4, minWidth: 100 },
+    { field: "phone", headerName: "Phone Number", flex: 0.3, minWidth: 125 },
+    { field: "email", headerName: "Email", flex: 0.5, minWidth: 200 },
+    {
+      field: "cost",
+      headerName: "Cost",
+      flex: 0.3,
+      minWidth: 100,
+      renderCell: ({ row: { cost } }) => (
+        <Typography color={colors.greenAccent[500]}>${cost}</Typography>
+      ),
+    },
+    { field: "date", headerName: "Date", flex: 0.3, minWidth: 100 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 0.3,
+      minWidth: 100,
+      renderCell: (params) => (
+        <>
+          <Button
+            variant="contained"
+            onClick={() => handleEdit(params.row)}
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => handleDelete(params.row.id)}
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "10px",
+              fontWeight: "bold",
+              padding: "7px 7px",
+              margin: "3px",
+            }}
+          >
+            Delete
+          </Button>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <Box m="10px">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Header title="INVOICES" subtitle="List of Invoice Balances" />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAdd}
+          sx={{
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            fontSize: "14px",
+            fontWeight: "bold",
+            padding: "10px 20px",
+          }}
+        >
+          Add Invoice
+        </Button>
+      </Box>
+      <Box
+        m="40px 0 0 0"
+        height="75vh"
+        sx={{
+          "& .MuiDataGrid-root": {
+            border: "none",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.grey[100]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={invoices}
+          columns={columns}
+          components={{ Toolbar: GridToolbar }}
+        />
+      </Box>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: "black",
+            color: "#CECECE",
+          },
+        }}
+      >
+        <DialogTitle>
+          {currentInvoice ? "Edit Invoice" : "Add Invoice"}
+        </DialogTitle>
+        <DialogContent>
+          <Formik
+            initialValues={
+              currentInvoice || {
+                id: null,
+                name: "",
+                phone: "",
+                email: "",
+                cost: "",
+                date: "",
+              }
+            }
+            validationSchema={validationSchema}
+            onSubmit={(values) => handleFormSubmit(values)}
+          >
+            {({ errors, touched }) => (
+              <Form>
+                <Box width={300}>
+                  <Field
+                    name="name"
+                    as={TextField}
+                    label="Name"
+                    fullWidth
+                    margin="dense"
+                    error={touched.name && !!errors.name}
+                    helperText={touched.name && errors.name}
+                  />
+                  <Field
+                    name="phone"
+                    as={TextField}
+                    label="Phone"
+                    fullWidth
+                    margin="dense"
+                    error={touched.phone && !!errors.phone}
+                    helperText={touched.phone && errors.phone}
+                  />
+                  <Field
+                    name="email"
+                    as={TextField}
+                    label="Email"
+                    fullWidth
+                    margin="dense"
+                    error={touched.email && !!errors.email}
+                    helperText={touched.email && errors.email}
+                  />
+                  <Field
+                    name="cost"
+                    as={TextField}
+                    label="Cost"
+                    type="number"
+                    fullWidth
+                    margin="dense"
+                    error={touched.cost && !!errors.cost}
+                    helperText={touched.cost && errors.cost}
+                  />
+                  <Field
+                    name="date"
+                    as={TextField}
+                    type="date"
+                    fullWidth
+                    margin="dense"
+                    error={touched.date && !!errors.date}
+                    helperText={touched.date && errors.date}
+                  />
+                </Box>
+                <DialogActions>
+                  <Button
+                    onClick={handleClose}
+                    sx={{
+                      backgroundColor: "#4461ED",
+                      color: "#BBB2B2",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      padding: "7px 7px",
+                      margin: "3px",
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    sx={{
+                      backgroundColor: "#4461ED",
+                      color: "#BBB2B2",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      padding: "7px 7px",
+                      margin: "3px",
+                    }}
+                  >
+                    {currentInvoice ? "Update" : "Add"}
+                  </Button>
+                </DialogActions>
+              </Form>
+            )}
+          </Formik>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default Invoices;

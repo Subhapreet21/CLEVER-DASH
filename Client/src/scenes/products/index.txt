@@ -1,0 +1,370 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Typography,
+  CardActions,
+  Collapse,
+  Card,
+  CardContent,
+  useTheme,
+  Rating,
+} from "@mui/material";
+import Header from "../../components/Header";
+import { tokens } from "../../theme";
+import { Formik, Form, Field } from "formik";
+import * as yup from "yup";
+import { mockProductData } from "../../data/mockData"; // Importing sample data
+
+const Products = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const [products, setProducts] = useState(mockProductData);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+
+  const handleAdd = () => {
+    setCurrentProduct({
+      _id: null,
+      name: "",
+      price: "",
+      description: "",
+      rating: "",
+      category: "",
+      supply: "",
+      stat: [
+        {
+          yearlySalesTotal: "",
+          yearlyTotalSoldUnits: "",
+        },
+      ],
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setCurrentProduct(null);
+  };
+
+  const handleFormSubmit = (values) => {
+    if (currentProduct && currentProduct._id !== null) {
+      // Update product
+      setProducts(
+        products.map((product) =>
+          product._id === currentProduct._id ? values : product
+        )
+      );
+    } else {
+      // Add product
+      setProducts([...products, { ...values, _id: products.length + 1 }]);
+    }
+    setOpen(false);
+  };
+
+  const handleEdit = (product) => {
+    setCurrentProduct(product);
+    setOpen(true);
+  };
+
+  const handleDelete = (productId) => {
+    setProducts(products.filter((product) => product._id !== productId));
+  };
+
+  return (
+    <Box m="1.5rem 2.5rem">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Header title="PRODUCTS" subtitle="See your list of products." />
+        <Button
+          ovariant="contained"
+          color="primary"
+          onClick={handleAdd}
+          sx={{
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+            fontSize: "14px",
+            fontWeight: "bold",
+            padding: "10px 20px",
+          }}
+        >
+          Add Product
+        </Button>
+      </Box>
+      <Box
+        mt="20px"
+        display="grid"
+        gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+        justifyContent="space-between"
+        rowGap="20px"
+        columnGap="1.33%"
+      >
+        {products.map((product) => (
+          <Card
+            key={product._id}
+            sx={{
+              backgroundColor: colors.blueAccent[600],
+              borderRadius: "0.55rem",
+              "&:hover": {
+                boxShadow: `0 4px 20px 0 ${colors.shadow}`,
+              },
+            }}
+          >
+            <CardContent>
+              {/* Category */}
+              <Typography
+                sx={{ fontSize: 14 }}
+                color={theme.palette.secondary[700]}
+                gutterBottom
+              >
+                {product.category}
+              </Typography>
+
+              {/* Name */}
+              <Typography variant="h5" component="div">
+                {product.name}
+              </Typography>
+
+              {/* Price */}
+              <Typography
+                sx={{ mb: "1.5rem" }}
+                color={theme.palette.secondary[400]}
+              >
+                ${Number(product.price).toFixed(2)}
+              </Typography>
+
+              {/* Rating */}
+              <Rating value={product.rating} readOnly />
+
+              {/* Description */}
+              <Typography variant="body2">{product.description}</Typography>
+            </CardContent>
+
+            {/* See More/See Less */}
+            <CardActions>
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={() => handleEdit(product)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={() => handleDelete(product._id)}
+              >
+                Delete
+              </Button>
+            </CardActions>
+
+            {/* More Info */}
+            <Collapse
+              in={isExpanded}
+              timeout="auto"
+              unmountOnExit
+              sx={{ color: theme.palette.neutral[300] }}
+            >
+              <CardContent>
+                <Typography>id: {product._id}</Typography>
+                <Typography>Supply Left: {product.supply}</Typography>
+                <Typography>
+                  Yearly Sales This Year: {product.stat[0].yearlySalesTotal}
+                </Typography>
+                <Typography>
+                  Yearly Units Sold This Year:{" "}
+                  {product.stat[0].yearlyTotalSoldUnits}
+                </Typography>
+              </CardContent>
+            </Collapse>
+          </Card>
+        ))}
+      </Box>
+
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>
+          {currentProduct && currentProduct._id !== null
+            ? "Edit Product"
+            : "Add Product"}
+        </DialogTitle>
+        <DialogContent>
+          <Formik
+            initialValues={{
+              _id: currentProduct ? currentProduct._id : null,
+              name: currentProduct ? currentProduct.name : "",
+              price: currentProduct ? currentProduct.price : "",
+              description: currentProduct ? currentProduct.description : "",
+              rating: currentProduct ? currentProduct.rating : "",
+              category: currentProduct ? currentProduct.category : "",
+              supply: currentProduct ? currentProduct.supply : "",
+              stat: currentProduct
+                ? currentProduct.stat
+                : [
+                    {
+                      yearlySalesTotal: "",
+                      yearlyTotalSoldUnits: "",
+                    },
+                  ],
+            }}
+            validationSchema={yup.object({
+              name: yup.string().required("Name is required"),
+              price: yup.number().required("Price is required"),
+              description: yup.string().required("Description is required"),
+              rating: yup.number().required("Rating is required").min(0).max(5),
+              category: yup.string().required("Category is required"),
+              supply: yup.number().required("Supply is required"),
+              stat: yup.array().of(
+                yup.object({
+                  yearlySalesTotal: yup
+                    .number()
+                    .required("Yearly Sales Total is required"),
+                  yearlyTotalSoldUnits: yup
+                    .number()
+                    .required("Yearly Total Sold Units is required"),
+                })
+              ),
+            })}
+            onSubmit={(values) => {
+              handleFormSubmit(values);
+            }}
+          >
+            {(formik) => (
+              <Form>
+                <Field name="name">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Name"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="price">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Price"
+                      type="number"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="description">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Description"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="rating">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Rating"
+                      type="number"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="category">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Category"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="supply">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Supply"
+                      type="number"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="stat[0].yearlySalesTotal">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Yearly Sales Total"
+                      type="number"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Field name="stat[0].yearlyTotalSoldUnits">
+                  {({ field, form }) => (
+                    <TextField
+                      {...field}
+                      label="Yearly Total Sold Units"
+                      type="number"
+                      fullWidth
+                      margin="dense"
+                    />
+                  )}
+                </Field>
+                <Button
+                  type="submit"
+                  sx={{
+                    backgroundColor: "#4461ED",
+                    color: "#BBB2B2",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    padding: "7px 7px",
+                    margin: "3px",
+                  }}
+                >
+                  {currentProduct && currentProduct._id !== null
+                    ? "Update"
+                    : "Add"}
+                </Button>
+                <Button
+                  onClick={handleClose}
+                  sx={{
+                    backgroundColor: "#4461ED",
+                    color: "#BBB2B2",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    padding: "7px 7px",
+                    margin: "3px",
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default Products;
